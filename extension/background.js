@@ -1,5 +1,10 @@
-// Service worker — keeps extension alive and handles cross-origin fetch if needed
+// Load analyzer and handle messages
+importScripts('analyzer.js')
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({ apiUrl: "" });
-});
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === 'ANALYZE') {
+    const result = analyzeJob(msg.description)
+    sendResponse(result)
+  }
+  return true
+})
