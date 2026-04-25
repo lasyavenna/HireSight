@@ -20,46 +20,85 @@ export default function LoginPage() {
     setLoading(false)
   }
 
+  const inputStyle = {
+    width: '100%', display: 'block',
+    background: 'var(--bg3)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    color: 'var(--text)',
+    fontFamily: 'var(--font)',
+    fontSize: '13px',
+    padding: '11px 14px',
+    marginBottom: '10px',
+    outline: 'none',
+  }
+
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-2 text-center text-white">Welcome back</h1>
-        <p className="text-zinc-500 text-sm text-center mb-6">Sign in to CareerIntel</p>
+    <div style={{
+      minHeight: '100vh', background: 'var(--bg)',
+      display: 'flex', alignItems: 'center',
+      justifyContent: 'center', padding: '20px',
+    }}>
+      <div style={{
+        background: 'var(--bg2)',
+        border: '1px solid var(--border2)',
+        borderRadius: '16px',
+        padding: '36px',
+        width: '100%', maxWidth: '380px',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{
+            fontFamily: 'var(--font-display)', fontWeight: 800,
+            fontSize: '22px', color: 'var(--text)', letterSpacing: '-0.5px', marginBottom: '6px',
+          }}>
+            HireSight<span style={{ color: 'var(--amber)' }}>.</span>
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Welcome back</div>
+        </div>
 
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm mb-3 focus:outline-none focus:border-violet-500 text-white"
+          type="email" placeholder="Email" value={email}
+          onChange={e => setEmail(e.target.value)}
+          style={inputStyle as any}
+          onFocus={e => (e.target.style.borderColor = 'var(--amber)')}
+          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
         />
         <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm mb-4 focus:outline-none focus:border-violet-500 text-white"
+          type="password" placeholder="Password" value={password}
+          onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleLogin()}
+          style={{ ...inputStyle as any, marginBottom: '16px' }}
+          onFocus={e => (e.target.style.borderColor = 'var(--amber)')}
+          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
         />
 
         {error && (
-          <p className="text-red-400 text-sm mb-3 text-center">{error}</p>
+          <div style={{ fontSize: '12px', color: 'var(--red)', marginBottom: '12px', textAlign: 'center' }}>
+            {error}
+          </div>
         )}
 
         <button
           onClick={handleLogin}
           disabled={loading || !email || !password}
-          className="w-full bg-violet-600 hover:bg-violet-500 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            width: '100%', background: 'var(--amber)', color: '#1a0e00',
+            border: 'none', borderRadius: '8px', padding: '12px',
+            fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-display)',
+            cursor: loading || !email || !password ? 'not-allowed' : 'pointer',
+            opacity: loading || !email || !password ? 0.5 : 1,
+            marginBottom: '16px',
+          }}
         >
-          {loading ? 'Signing in...' : 'Sign In'}
+          {loading ? 'Signing in…' : 'Sign In'}
         </button>
 
-        <p className="text-center text-sm text-zinc-500 mt-4">
+        <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text3)' }}>
           No account?{' '}
-          <Link href="/signup" className="text-violet-400 hover:underline">
+          <Link href="/signup" style={{ color: 'var(--amber)', textDecoration: 'none', fontWeight: 600 }}>
             Sign up
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   )

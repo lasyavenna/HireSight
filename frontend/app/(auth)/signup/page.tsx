@@ -8,42 +8,158 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
+  const [role, setRole] = useState('job_seeker')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
 
   const handleSignup = async () => {
+    if (!username.trim() || !email.trim() || !password.trim()) return
     setLoading(true)
     setError('')
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
-    if (data.user) {
-      await supabase.from('profiles').insert({ id: data.user.id, username })
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          username: username.trim(),
+          role,
+        }
+      }
+    })
+
+    if (signUpError) {
+      setError(signUpError.message)
+      setLoading(false)
+      return
     }
-    router.push('/')
+
+    // Trigger handles profile creation automatically
+    if (data.session) {
+      router.push('/')
+    } else {
+      alert('Check your email to confirm your account, then sign in.')
+      router.push('/login')
+    }
+
     setLoading(false)
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%', display: 'block',
+    background: 'var(--bg3)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    color: 'var(--text)',
+    fontFamily: 'var(--font)',
+    fontSize: '13px',
+    padding: '11px 14px',
+    marginBottom: '10px',
+    outline: 'none',
+  }
+
+  const roles = [
+    { key: 'job_seeker',   label: 'Job Seeker'  },
+    { key: 'recruiter',    label: 'Recruiter'    },
+    { key: 'professional', label: 'Industry Pro' },
+  ]
+
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-2 text-center text-white">Create account</h1>
-        <p className="text-zinc-500 text-sm text-center mb-6">Join CareerIntel</p>
-        <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm mb-3 focus:outline-none focus:border-violet-500 text-white" />
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm mb-3 focus:outline-none focus:border-violet-500 text-white" />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm mb-4 focus:outline-none focus:border-violet-500 text-white" />
-        {error && <p className="text-red-400 text-sm mb-3 text-center">{error}</p>}
-        <button onClick={handleSignup} disabled={loading || !email || !password || !username}
-          className="w-full bg-violet-600 hover:bg-violet-500 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50">
-          {loading ? 'Creating account...' : 'Sign Up'}
+    <div style={{
+      minHeight: '100vh', background: 'var(--bg)',
+      display: 'flex', alignItems: 'center',
+      justifyContent: 'center', padding: '20px',
+    }}>
+      <div style={{
+        background: 'var(--bg2)',
+        border: '1px solid var(--border2)',
+        borderRadius: '16px', padding: '36px',
+        width: '100%', maxWidth: '400px',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{
+            fontFamily: 'var(--font-display)', fontWeight: 800,
+            fontSize: '22px', color: 'var(--text)',
+            letterSpacing: '-0.5px', marginBottom: '6px',
+          }}>
+            HireSight<span style={{ color: 'var(--amber)' }}>.</span>
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Create your account</div>
+        </div>
+
+        {[
+          { label: 'Username', type: 'text', val: username, set: (v: string) => setUsername(v.toLowerCase().replace(/\s/g, '')), placeholder: 'e.g. techrecruiter42' },
+          { label: 'Email', type: 'email', val: email, set: setEmail, placeholder: 'you@example.com' },
+          { label: 'Password', type: 'password', val: password, set: setPassword, placeholder: 'Min 6 characters' },
+        ].map(f => (
+          <div key={f.label}>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: '10px',
+              color: 'var(--text3)', textTransform: 'uppercase',
+              letterSpacing: '1px', marginBottom: '6px',
+            }}>{f.label}</div>
+            <input
+              type={f.type}
+              placeholder={f.placeholder}
+              value={f.val}
+              onChange={e => f.set(e.target.value)}
+              style={f.label === 'Password' ? { ...inputStyle, marginBottom: '16px' } : inputStyle}
+              onFocus={e => (e.target.style.borderColor = 'var(--amber)')}
+              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+            />
+          </div>
+        ))}
+
+        <div style={{
+          fontFamily: 'var(--font-mono)', fontSize: '10px',
+          color: 'var(--text3)', textTransform: 'uppercase',
+          letterSpacing: '1px', marginBottom: '8px',
+        }}>I am a</div>
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+          {roles.map(r => (
+            <button key={r.key} onClick={() => setRole(r.key)} style={{
+              flex: 1, padding: '9px 4px', borderRadius: '8px',
+              border: `1px solid ${role === r.key ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`,
+              background: role === r.key ? 'var(--amber-dim)' : 'var(--bg3)',
+              color: role === r.key ? 'var(--amber)' : 'var(--text3)',
+              fontSize: '11px', fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font)',
+            }}>{r.label}</button>
+          ))}
+        </div>
+
+        {error && (
+          <div style={{
+            fontSize: '12px', color: 'var(--red)',
+            background: 'var(--red-dim)',
+            border: '1px solid rgba(244,63,94,0.2)',
+            borderRadius: '8px', padding: '10px 14px',
+            marginBottom: '14px', textAlign: 'center',
+          }}>{error}</div>
+        )}
+
+        <button
+          onClick={handleSignup}
+          disabled={loading || !email || !password || !username}
+          style={{
+            width: '100%', background: 'var(--amber)', color: '#1a0e00',
+            border: 'none', borderRadius: '8px', padding: '13px',
+            fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-display)',
+            cursor: loading || !email || !password || !username ? 'not-allowed' : 'pointer',
+            opacity: loading || !email || !password || !username ? 0.5 : 1,
+            marginBottom: '16px',
+          }}
+        >
+          {loading ? 'Creating account…' : 'Create Account'}
         </button>
-        <p className="text-center text-sm text-zinc-500 mt-4">
+
+        <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text3)' }}>
           Already have an account?{' '}
-          <Link href="/login" className="text-violet-400 hover:underline">Sign in</Link>
-        </p>
+          <Link href="/login" style={{ color: 'var(--amber)', textDecoration: 'none', fontWeight: 600 }}>
+            Sign in
+          </Link>
+        </div>
       </div>
     </div>
   )
