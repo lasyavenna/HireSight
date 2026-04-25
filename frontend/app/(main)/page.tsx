@@ -1,98 +1,104 @@
+'use client'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import PostCard from '@/components/feed/PostCard'
 import PostComposer from '@/components/feed/PostComposer'
+import LeftSidebar from '@/components/layout/LeftSidebar'
+import RightSidebar from '@/components/layout/RightSidebar'
 import { Post } from '@/lib/types'
 
-async function getPosts(): Promise<Post[]> {
-  const { data, error } = await supabase
-    .from('posts')
-    .select(`
-      *,
-      profiles(username, avatar_url, role),
-      companies(name, industry),
-      votes(vote_type)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(50)
+const sortOptions = ['Hot', 'New', 'Top']
 
-  if (error) { console.error(error); return [] }
+export default function FeedPage() {
+  const [posts, setPosts] = useState<Post[]>([])
+  const [filter, setFilter] = useState('all')
+  const [sort, setSort] = useState('Hot')
+  const [loading, setLoading] = useState(true)
 
-  return (data || []).map((post: any) => ({
-    ...post,
-    vote_count: (post.votes || []).reduce((acc: number, v: any) => acc + v.vote_type, 0),
-    comment_count: post.comment_count ?? 0,
-  }))
-}
+  useEffect(() => {
+    fetchPosts()
+  }, [])
 
-const postTypeFilters = ['All', 'OA', 'interview', 'recruiter', 'ghost', 'advice']
+  async function fetchPosts() {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`*, profiles(username, avatar_url, role), companies(name, industry), votes(vote_type)`)
+      .order('created_at', { ascending: false })
+      .limit(50)
 
-export default async function FeedPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ filter?: string; type?: string }>
-}) {
-  const params = await searchParams
-  const filter = params.filter || 'new'
-  const typeFilter = params.type || 'All'
+    if (!error && data) {
+      const mapped = data.map((post: any) => ({
+        ...post,
+        vote_count: (post.votes || []).reduce((acc: number, v: any) => acc + v.vote_type, 0),
+        comment_count: post.comment_count ?? 0,
+      }))
+      setPosts(mapped)
+    }
+    setLoading(false)
+  }
 
-  const posts = await getPosts()
-
-  const filteredPosts = typeFilter === 'All'
+  const filteredPosts = filter === 'all'
     ? posts
-    : posts.filter((p) => p.post_type === typeFilter)
+    : posts.filter(p => p.post_type === filter)
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-bold text-white">Career Feed</h1>
-          <p className="text-xs text-zinc-500">Real experiences from real applicants</p>
+    <div style={{
+      maxWidth: '1200px',
+      margin: '0 auto',
+      display: 'grid',
+      gridTemplateColumns: '220px 1fr 280px',
+      gap: '20px',
+      padding: '24px 20px',
+    }}>
+      {/* Left Sidebar */}
+      <LeftSidebar activeFilter={filter} onFilter={setFilter} />
+
+      {/* Main Feed */}
+      <main>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text)' }}>
+            Applicant Intelligence Feed
+          </div>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {sortOptions.map(s => (
+              <button
+                key={s}
+                onClick={() => setSort(s)}
+                style={{
+                  fontSize: '12px', fontWeight: 500,
+                  padding: '5px 12px', borderRadius: '6px',
+                  border: '1px solid var(--border)',
+                  background: sort === s ? 'var(--bg3)' : 'none',
+                  color: sort === s ? 'var(--text)' : 'var(--text2)',
+                  cursor: 'pointer', transition: 'all 0.12s',
+                  fontFamily: 'var(--font)',
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {['new', 'top', 'hot'].map((f) => (
-            <a
-              key={f}
-              href={`?filter=${f}&type=${typeFilter}`}
-              className={`px-3 py-1 text-xs rounded capitalize transition-colors ${
-                filter === f
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-zinc-800 text-zinc-400 hover:text-white'
-              }`}
-            >
-              {f}
-            </a>
-          ))}
-        </div>
-      </div>
 
-      <div className="flex gap-2 flex-wrap mb-4">
-        {postTypeFilters.map((t) => (
-          <a
-            key={t}
-            href={`?filter=${filter}&type=${t}`}
-            className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-              typeFilter === t
-                ? 'bg-violet-600 border-violet-600 text-white'
-                : 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
-            }`}
-          >
-            {t}
-          </a>
-        ))}
-      </div>
+        <PostComposer onPost={fetchPosts} />
 
-      <PostComposer />
-
-      <div className="space-y-3">
-        {filteredPosts.length === 0 ? (
-          <div className="text-center text-zinc-500 py-16">
-            <p className="text-lg mb-1">No posts yet</p>
-            <p className="text-sm">Be the first to share your experience</p>
+        {loading ? (
+          <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '48px 0', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+            Loading feed…
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '48px 0' }}>
+            <div style={{ fontSize: '16px', marginBottom: '6px' }}>No posts yet</div>
+            <div style={{ fontSize: '13px' }}>Be the first to share your experience</div>
           </div>
         ) : (
-          filteredPosts.map((post) => <PostCard key={post.id} post={post} />)
+          filteredPosts.map(post => <PostCard key={post.id} post={post} />)
         )}
-      </div>
+      </main>
+
+      {/* Right Sidebar */}
+      <RightSidebar />
     </div>
   )
 }
