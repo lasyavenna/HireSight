@@ -11,7 +11,7 @@ model = None
 MODEL_NAME = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash-lite')
 FALLBACK_MODEL_NAMES = [
     name.strip()
-    for name in os.getenv('GEMINI_FALLBACK_MODELS', 'gemini-2.0-flash-lite,gemini-2.0-flash').split(',')
+    for name in os.getenv('GEMINI_FALLBACK_MODELS', 'gemini-2.5-flash-lite,gemini-2.0-flash-lite,gemini-2.0-flash').split(',')
     if name.strip()
 ]
 if genai and os.getenv('GEMINI_API_KEY'):
