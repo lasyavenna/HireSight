@@ -113,6 +113,48 @@ export default function HomePage() {
           </div>
         </div>
 
+        <div style={{
+          border: '1px solid var(--border)',
+          background: 'var(--bg2)',
+          borderRadius: '14px',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+        }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 500, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>
+            What HireSight does
+          </div>
+          {[
+            { icon: SearchCheck, label: 'Ghost-job detector', desc: 'Score any posting for legitimacy before you apply' },
+            { icon: FileText,    label: 'Resume-aware AI',    desc: 'Your PDF follows you across every feature' },
+            { icon: Mic2,        label: 'Live interview coach', desc: 'Real-time feedback tuned to your resume' },
+            { icon: MapPin,      label: 'Career roadmap',     desc: 'Personalized 12-week plan per role & company' },
+            { icon: Users,       label: 'Community signals',  desc: 'Real interview data from peers at your targets' },
+          ].map(({ icon: Icon, label, desc }, i, arr) => (
+            <div key={label} style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              padding: '11px 0',
+              borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+            }}>
+              <div style={{
+                width: '30px', height: '30px', borderRadius: '8px',
+                background: 'rgba(245,158,11,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Icon size={15} color="var(--amber)" />
+              </div>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>{label}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', lineHeight: 1.5 }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </section>
 
       <section className="demo-steps">
