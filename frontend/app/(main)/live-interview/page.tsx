@@ -1,10 +1,11 @@
 'use client'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { CSSProperties } from 'react'
 
 type InterviewMode = 'behavioral' | 'technical' | 'mixed'
 type SessionState = 'idle' | 'live' | 'complete'
+type InterviewVoiceId = 'rachel' | 'antoni' | 'domi' | 'elli' | 'arnold'
 type ResumeRow = {
   raw_text: string | null
   skills: string[] | null
@@ -65,6 +66,13 @@ type InterviewScore = {
   source: 'local' | 'gemini'
 }
 
+type InterviewVoice = {
+  id: InterviewVoiceId
+  name: string
+  personality: string
+  elevenLabsVoiceId: string
+}
+
 const questionBank: Record<InterviewMode, string[]> = {
   behavioral: [
     'Tell me about yourself and the kind of role you are targeting right now.',
@@ -90,6 +98,18 @@ const questionBank: Record<InterviewMode, string[]> = {
 }
 
 const resumeFallback = 'No saved resume found yet. Paste or save a resume in your profile later for stronger personalization.'
+
+const interviewVoices: InterviewVoice[] = [
+  { id: 'rachel', name: 'Rachel', personality: 'calm recruiter', elevenLabsVoiceId: '21m00Tcm4TlvDq8ikWAM' },
+  { id: 'antoni', name: 'Antoni', personality: 'warm mentor', elevenLabsVoiceId: 'ErXwobaYiN019PkySvjV' },
+  { id: 'domi', name: 'Domi', personality: 'energetic coach', elevenLabsVoiceId: 'AZnzlk1XvdvUeBnXmlld' },
+  { id: 'elli', name: 'Elli', personality: 'friendly peer interviewer', elevenLabsVoiceId: 'MF3mGyEYCl7XYWbV9V6O' },
+  { id: 'arnold', name: 'Arnold', personality: 'direct technical interviewer', elevenLabsVoiceId: 'VR6AewLTigWG4xSOukaG' },
+]
+
+function isInterviewVoiceId(value: string | null): value is InterviewVoiceId {
+  return interviewVoices.some(voice => voice.id === value)
+}
 
 function formatTime() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -271,14 +291,24 @@ export default function LiveInterviewPage() {
   const [scores, setScores] = useState<InterviewScore>(emptyScore)
   const [interimTranscript, setInterimTranscript] = useState('')
   const [micStatus, setMicStatus] = useState('Mic is off')
+  const [voiceStatus, setVoiceStatus] = useState(`${interviewVoices[0].name} voice ready`)
+  const [selectedVoiceId, setSelectedVoiceId] = useState<InterviewVoiceId>(() => {
+    if (typeof window === 'undefined') return 'rachel'
+    const savedVoiceId = window.localStorage.getItem('hiresight-interview-voice')
+    return isInterviewVoiceId(savedVoiceId) ? savedVoiceId : 'rachel'
+  })
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioUrlCacheRef = useRef(new Map<string, string>())
+  const audioRequestCacheRef = useRef(new Map<string, Promise<string>>())
   const committedTranscriptRef = useRef('')
 
   const questions = questionBank[mode]
   const currentQuestion = questions[questionIndex]
   const averageScore = Math.round((scores.clarity + scores.depth + scores.impact) / 3) || 0
+  const selectedVoice = interviewVoices.find(voice => voice.id === selectedVoiceId) ?? interviewVoices[0]
 
   const resumeSignals = useMemo(() => {
     const text = resumeText.toLowerCase()
@@ -286,6 +316,10 @@ export default function LiveInterviewPage() {
       .filter(skill => text.includes(skill))
       .slice(0, 5)
   }, [resumeText])
+
+  useEffect(() => {
+    window.localStorage.setItem('hiresight-interview-voice', selectedVoiceId)
+  }, [selectedVoiceId])
 
   useEffect(() => {
     async function loadResume() {
@@ -319,17 +353,102 @@ export default function LiveInterviewPage() {
     loadResume()
   }, [])
 
-  const speak = (text: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return Promise.resolve()
-    window.speechSynthesis.cancel()
-    return new Promise<void>(resolve => {
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.rate = 0.96
-      utterance.pitch = 1
-      utterance.onend = () => resolve()
-      utterance.onerror = () => resolve()
-      window.speechSynthesis.speak(utterance)
+  useEffect(() => {
+    const audioUrlCache = audioUrlCacheRef.current
+    const audioRequestCache = audioRequestCacheRef.current
+
+    return () => {
+      audioRef.current?.pause()
+      audioRef.current = null
+      audioUrlCache.forEach(audioUrl => URL.revokeObjectURL(audioUrl))
+      audioUrlCache.clear()
+      audioRequestCache.clear()
+    }
+  }, [])
+
+  const fetchVoiceAudioUrl = useCallback((text: string, voice: InterviewVoice) => {
+    const cleanText = text.trim()
+    const cacheKey = `${voice.elevenLabsVoiceId}:${cleanText}`
+    const cachedAudioUrl = audioUrlCacheRef.current.get(cacheKey)
+    if (cachedAudioUrl) return Promise.resolve(cachedAudioUrl)
+
+    const activeRequest = audioRequestCacheRef.current.get(cacheKey)
+    if (activeRequest) return activeRequest
+
+    const request = fetch('/api/interview-voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: cleanText,
+        voice_id: voice.elevenLabsVoiceId,
+      }),
     })
+      .then(async response => {
+        if (!response.ok) throw new Error('ElevenLabs voice unavailable')
+        const audioBlob = await response.blob()
+        const audioUrl = URL.createObjectURL(audioBlob)
+        audioUrlCacheRef.current.set(cacheKey, audioUrl)
+        return audioUrl
+      })
+      .finally(() => {
+        audioRequestCacheRef.current.delete(cacheKey)
+      })
+
+    audioRequestCacheRef.current.set(cacheKey, request)
+    return request
+  }, [])
+
+  useEffect(() => {
+    const cleanQuestion = currentQuestion?.trim()
+    if (!cleanQuestion || sessionState !== 'idle') return
+
+    let cancelled = false
+    fetchVoiceAudioUrl(cleanQuestion, selectedVoice)
+      .then(() => {
+        if (!cancelled) setVoiceStatus(`${selectedVoice.name} (${selectedVoice.personality}) ready`)
+      })
+      .catch(() => {
+        if (!cancelled) setVoiceStatus('ElevenLabs voice needs attention')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentQuestion, fetchVoiceAudioUrl, selectedVoice, sessionState])
+
+  const speak = async (text: string) => {
+    const cleanText = text.trim()
+    if (!cleanText) return
+
+    audioRef.current?.pause()
+    audioRef.current = null
+
+    try {
+      setVoiceStatus(`Loading ${selectedVoice.name} voice`)
+      const audioUrl = await fetchVoiceAudioUrl(cleanText, selectedVoice)
+
+      await new Promise<void>((resolve, reject) => {
+        const audio = new Audio(audioUrl)
+        audio.preload = 'auto'
+        audioRef.current = audio
+        audio.onended = () => {
+          if (audioRef.current === audio) audioRef.current = null
+          resolve()
+        }
+        audio.onerror = () => {
+          if (audioRef.current === audio) audioRef.current = null
+          reject(new Error('Audio playback failed'))
+        }
+        audio.play().catch(error => {
+          if (audioRef.current === audio) audioRef.current = null
+          reject(error)
+        })
+      })
+
+      setVoiceStatus(`${selectedVoice.name} (${selectedVoice.personality})`)
+    } catch {
+      setVoiceStatus('ElevenLabs voice unavailable. Try Replay question in a moment.')
+    }
   }
 
   const startListening = async () => {
@@ -443,7 +562,8 @@ export default function LiveInterviewPage() {
 
   const resetSession = () => {
     stopListening()
-    window.speechSynthesis?.cancel()
+    audioRef.current?.pause()
+    audioRef.current = null
     setSessionState('idle')
     setQuestionIndex(0)
     setAnswer('')
@@ -506,6 +626,25 @@ export default function LiveInterviewPage() {
                   {option}
                 </button>
               ))}
+            </div>
+
+            <div className="voice-control">
+              <label htmlFor="interviewer-voice">Interviewer voice</label>
+              <div className="voice-select-shell">
+                <select
+                  id="interviewer-voice"
+                  value={selectedVoiceId}
+                  onChange={event => setSelectedVoiceId(event.target.value as InterviewVoiceId)}
+                  className="voice-select"
+                >
+                  {interviewVoices.map(voice => (
+                    <option key={voice.id} value={voice.id}>
+                      {voice.name} ({voice.personality})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <span className="voice-status">{voiceStatus}</span>
             </div>
           </section>
 
@@ -760,6 +899,69 @@ export default function LiveInterviewPage() {
           top: 76px;
         }
 
+        .voice-control {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
+
+        .voice-control label,
+        .voice-status {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+
+        .voice-control label {
+          color: var(--text3);
+        }
+
+        .voice-select-shell {
+          position: relative;
+          min-width: 250px;
+        }
+
+        .voice-select-shell::after {
+          content: "";
+          position: absolute;
+          right: 13px;
+          top: 50%;
+          width: 7px;
+          height: 7px;
+          border-right: 2px solid var(--amber);
+          border-bottom: 2px solid var(--amber);
+          pointer-events: none;
+          transform: translateY(-65%) rotate(45deg);
+        }
+
+        .voice-select {
+          width: 100%;
+          appearance: none;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--border2);
+          border-radius: 8px;
+          color: var(--text2);
+          cursor: pointer;
+          font-family: var(--font);
+          font-size: 12px;
+          font-weight: 700;
+          line-height: 1.2;
+          outline: none;
+          padding: 10px 34px 10px 12px;
+        }
+
+        .voice-select:focus {
+          border-color: rgba(245, 158, 11, 0.45);
+          box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.12);
+        }
+
+        .voice-status {
+          color: var(--teal);
+        }
+
         @media (max-width: 900px) {
           .live-interview-grid {
             grid-template-columns: 1fr;
@@ -767,6 +969,10 @@ export default function LiveInterviewPage() {
 
           .live-interview-aside {
             position: static;
+          }
+
+          .voice-select-shell {
+            min-width: min(100%, 270px);
           }
         }
       `}</style>

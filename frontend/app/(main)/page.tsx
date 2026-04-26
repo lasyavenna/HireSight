@@ -191,7 +191,7 @@ export default function HomePage() {
           <Users size={20} color="var(--teal)" />
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', margin: '12px 0 8px' }}>Community feed</h2>
           <p style={{ color: 'var(--text2)', fontSize: '13px', lineHeight: 1.7, marginBottom: '14px' }}>
-            Applicants share company-specific signal — interview experiences, offer timelines, red flags — so future candidates know what they're actually walking into.
+            Applicants share company-specific signal — interview experiences, offer timelines, red flags — so future candidates know what they&apos;re actually walking into.
           </p>
           <Link href="/community" style={{ color: 'var(--teal)', fontSize: '13px', fontWeight: 800, textDecoration: 'none' }}>Open community feed</Link>
         </div>
