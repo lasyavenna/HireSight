@@ -8,7 +8,12 @@ except ImportError:
     genai = None
 
 model = None
-MODEL_NAME = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
+MODEL_NAME = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash-lite')
+FALLBACK_MODEL_NAMES = [
+    name.strip()
+    for name in os.getenv('GEMINI_FALLBACK_MODELS', 'gemini-2.0-flash-lite,gemini-2.0-flash').split(',')
+    if name.strip()
+]
 if genai and os.getenv('GEMINI_API_KEY'):
     genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
     model = genai.GenerativeModel(MODEL_NAME)
@@ -33,6 +38,7 @@ def gemini_status() -> dict:
         "configured": True,
         "reason": "",
         "model": MODEL_NAME,
+        "fallback_models": FALLBACK_MODEL_NAMES,
     }
 
 def _parse_json_response(text: str) -> dict:
@@ -41,19 +47,33 @@ def _parse_json_response(text: str) -> dict:
         text = text.split('\n', 1)[1].rsplit('```', 1)[0].strip()
     return json.loads(text)
 
+def _model_names() -> list[str]:
+    names = [MODEL_NAME, *FALLBACK_MODEL_NAMES]
+    return list(dict.fromkeys(names))
+
+def _is_quota_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "429" in message or "quota" in message or "rate limit" in message
+
 def _generate_json(prompt: str) -> dict:
     last_error = None
-    for attempt in range(3):
-        try:
-            response = model.generate_content(
-                prompt,
-                generation_config={"response_mime_type": "application/json"},
-            )
-            return _parse_json_response(response.text)
-        except Exception as exc:
-            last_error = exc
-            if attempt < 2:
-                time.sleep(0.8 * (attempt + 1))
+    for model_name in _model_names():
+        candidate_model = genai.GenerativeModel(model_name)
+        for attempt in range(2):
+            try:
+                response = candidate_model.generate_content(
+                    prompt,
+                    generation_config={"response_mime_type": "application/json"},
+                )
+                result = _parse_json_response(response.text)
+                result["_model_used"] = model_name
+                return result
+            except Exception as exc:
+                last_error = exc
+                if _is_quota_error(exc):
+                    break
+                if attempt == 0:
+                    time.sleep(0.8)
     raise RuntimeError(f"Gemini request failed: {last_error}")
 
 def analyze_job_with_ai(job_description: str, rule_score: int, resume_text: str = "") -> dict:
@@ -152,6 +172,7 @@ Return ONLY valid JSON in this exact shape:
             "better_answer": result.get("better_answer", ""),
             "follow_up_question": result.get("follow_up_question", ""),
             "source": "gemini",
+            "model_used": result.get("_model_used", MODEL_NAME),
             "status_reason": "",
         }
     except Exception as e:
