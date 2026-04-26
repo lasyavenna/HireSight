@@ -15,8 +15,8 @@
   --border: rgba(255, 255, 255, 0.22);
   --border2: rgba(255, 255, 255, 0.38);
   --text: #cce0f4;
-  --text2: #6898b8;
-  --text3: #3a5872;
+  --text2: #96c4e0;
+  --text3: #7aaac8;
   --amber: #58a8d0;
   --amber2: #7cc2e4;
   --amber-dim: rgba(88, 168, 208, 0.13);
@@ -49,7 +49,7 @@ body {
   background-repeat: repeat, repeat, repeat;
   color: var(--text);
   font-family: var(--font);
-  font-size: 14px;
+  font-size: 15px;
   min-height: 100vh;
   line-height: 1.5;
 }

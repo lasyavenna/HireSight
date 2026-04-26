@@ -31,14 +31,38 @@ export default function ResumePdfUploader({ resumeText, onResumeParsed, onClear 
       return
     }
 
-    const { error } = await supabase.from('resumes').insert({
-      user_id: user.id,
-      raw_text: parsed.text,
-      skills: parsed.skills,
-      experience_level: parsed.experience_level,
-    })
+    // Ensure a profiles row exists to satisfy the FK on resumes.user_id
+    const fallbackUsername = user.email?.split('@')[0] ?? 'user'
+    const { error: profileError } = await supabase.from('profiles').upsert(
+      { id: user.id, username: fallbackUsername },
+      { onConflict: 'id' }
+    )
+    if (profileError) console.error('Profile upsert error:', profileError)
 
-    setStatus(error ? 'Resume parsed, but Supabase did not save it.' : 'Resume parsed and saved for this account.')
+    const { data: existing } = await supabase
+      .from('resumes')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    let error
+    if (existing) {
+      ;({ error } = await supabase
+        .from('resumes')
+        .update({ raw_text: parsed.text, skills: parsed.skills, experience_level: parsed.experience_level })
+        .eq('user_id', user.id))
+    } else {
+      ;({ error } = await supabase
+        .from('resumes')
+        .insert({ user_id: user.id, raw_text: parsed.text, skills: parsed.skills, experience_level: parsed.experience_level }))
+    }
+
+    if (error) {
+      console.error('Supabase resume save error:', error)
+      setStatus(`Resume parsed, but could not save: ${error.message}`)
+    } else {
+      setStatus('Resume parsed and saved for this account.')
+    }
   }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {

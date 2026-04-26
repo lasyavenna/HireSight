@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
-import { analyzeJobPosting, AnalysisResult } from '@/lib/analyzer'
+import { useState, useEffect } from 'react'
+import { analyzeJobPosting, computeCandidateFit, AnalysisResult } from '@/lib/analyzer'
 import ResumePdfUploader from '@/components/resume/ResumePdfUploader'
+import { supabase } from '@/lib/supabase'
 
 const recStyle: Record<string, { color: string; bg: string; border: string; icon: string }> = {
   'Apply':         { color: 'var(--green)',  bg: 'var(--green-dim)',  border: 'rgba(34,197,94,0.3)',  icon: '↑' },
@@ -10,24 +11,23 @@ const recStyle: Record<string, { color: string; bg: string; border: string; icon
   'Skip':          { color: 'var(--red)',    bg: 'var(--red-dim)',    border: 'rgba(244,63,94,0.3)',  icon: '✕' },
 }
 
-const EXAMPLE = `Software Engineer — Full Stack
-Acme Corp · San Francisco, CA (Hybrid)
+const EXAMPLE = `Growth Marketing Specialist II — Multiple Openings
+NovaTech Solutions · Remote (US) · Full-time
 
-We're looking for a full-stack engineer to join our growth team of 8 engineers, reporting to the VP of Engineering.
+We are disrupting the space with innovative solutions at scale. We're looking to fill multiple openings on our growth team and need motivated self-starters to hit the ground running across various business functions.
 
 Responsibilities:
-- Build and maintain customer-facing features in React and Node.js
-- Design REST APIs and GraphQL endpoints
-- Collaborate with product and design on new features
+- Support growth campaigns in a fast-paced, dynamic environment
+- Assist with other duties as assigned based on shifting business priorities
+- Leverage our AWS-hosted analytics platform across various product lines
+- Collaborate with cross-functional teams to drive results across initiatives
 
 Requirements:
-- 3+ years with React and TypeScript
-- Experience with Node.js, PostgreSQL, Redis
-- Familiarity with AWS (EC2, S3, RDS)
+- 2–5 years in a marketing, analytics, or growth role
+- Familiarity with data analysis and reporting tools
+- Comfortable in a wear-many-hats culture where priorities change rapidly
 
-Compensation: $140,000 – $175,000 base + equity
-Benefits: Health, dental, vision, 401k match, unlimited PTO
-Interview process: recruiter screen → technical screen → take-home → final loop (3 rounds)`
+Note: Compensation details will be shared upon offer. No visa sponsorship available.`
 
 export default function GhostDetectorPage() {
   const [jobUrl, setJobUrl] = useState('')
@@ -38,6 +38,20 @@ export default function GhostDetectorPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [analyzed, setAnalyzed] = useState(false)
 
+  useEffect(() => {
+    async function loadSavedResume() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('resumes')
+        .select('raw_text')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (data?.raw_text) setResume(data.raw_text)
+    }
+    loadSavedResume()
+  }, [])
+
   const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0
 
   const handleAnalyze = async () => {
@@ -45,6 +59,8 @@ export default function GhostDetectorPage() {
     setAiLoading(true)
     setAnalyzed(true)
     const r = analyzeJobPosting(input)
+    // Instant client-side candidate fit — shown immediately, upgraded by AI if backend responds
+    if (resume) r.candidate_fit = computeCandidateFit(resume, input)
     setResult(r)
     try {
       const res = await fetch('/api/analyze', {
@@ -58,8 +74,14 @@ export default function GhostDetectorPage() {
           job_url: jobUrl,
         }),
       })
-      const data = await res.json()
-      setResult(prev => prev ? { ...prev, ai_summary: data.summary, candidate_fit: data.candidate_fit } : prev)
+      if (res.ok) {
+        const data = await res.json()
+        setResult(prev => prev ? {
+          ...prev,
+          ai_summary: data.summary || prev.ai_summary,
+          candidate_fit: data.candidate_fit || prev.candidate_fit,
+        } : prev)
+      }
     } catch (e) {
       console.error(e)
     }

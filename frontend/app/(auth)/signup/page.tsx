@@ -35,13 +35,11 @@ export default function SignupPage() {
     // Manually upsert profile so we don't depend solely on the DB trigger
     const userId = data.user?.id
     if (userId) {
-      await supabase.from('profiles').upsert({
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: userId,
         username: username.trim(),
-        display_name: username.trim(),
-        role,
-        karma: 0,
       }, { onConflict: 'id' })
+      if (profileError) console.error('Profile upsert error on signup:', profileError)
     }
 
     if (data.session) {

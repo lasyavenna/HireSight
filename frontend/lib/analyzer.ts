@@ -1,6 +1,98 @@
 // Rule-based scoring engine — runs client-side for instant results
 // AI-enhanced mode calls Flask backend
 
+const SKILL_KEYWORDS = [
+  'react', 'typescript', 'javascript', 'python', 'node', 'nodejs', 'sql', 'postgresql',
+  'postgres', 'redis', 'aws', 'gcp', 'azure', 'docker', 'kubernetes', 'graphql', 'rest',
+  'api', 'flask', 'django', 'fastapi', 'next', 'nextjs', 'tailwind', 'css', 'html',
+  'machine learning', 'ml', 'ai', 'llm', 'data science', 'analytics', 'tableau', 'spark',
+  'java', 'go', 'golang', 'rust', 'c++', 'swift', 'kotlin', 'ruby', 'rails', 'php',
+  'mongodb', 'dynamodb', 'firebase', 'supabase', 'git', 'ci/cd', 'agile', 'scrum',
+  'product management', 'figma', 'ux', 'ui', 'leadership', 'communication', 'linux',
+  'terraform', 'ansible', 'kafka', 'elasticsearch', 'nginx', 'pandas', 'numpy', 'pytorch',
+  'tensorflow', 'openai', 'langchain', 'microservices', 'serverless', 'websocket',
+]
+
+function parseRequiredYears(jobDescription: string): number | null {
+  const match = jobDescription.match(/(\d+)\+?\s*years?\s*(of\s*)?(experience|exp)/i)
+  return match ? parseInt(match[1]) : null
+}
+
+function inferResumeYears(resumeText: string): number | null {
+  const yearMatches = resumeText.match(/20(1[5-9]|2[0-4])/g)
+  if (!yearMatches || yearMatches.length < 2) return null
+  const years = yearMatches.map(Number).sort()
+  return new Date().getFullYear() - years[0]
+}
+
+function inferLevel(text: string): 'student' | 'junior' | 'mid' | 'senior' {
+  const t = text.toLowerCase()
+  if (/\b(intern|student|coursework|university|college|bootcamp)\b/.test(t)) return 'student'
+  if (/\b(senior|staff|principal|lead|architect|director|vp|head of)\b/.test(t)) return 'senior'
+  if (/\b(3\+|4\+|5\+|6\+|7\+|8\+|9\+|10\+)\s*years?\b/.test(t)) return 'senior'
+  if (/\b(mid.level|mid level|2\+|3\+)\s*years?\b/.test(t)) return 'mid'
+  return 'junior'
+}
+
+export function computeCandidateFit(resumeText: string, jobDescription: string): string {
+  const resumeLower = resumeText.toLowerCase()
+  const jobLower = jobDescription.toLowerCase()
+
+  const matched = SKILL_KEYWORDS.filter(k => resumeLower.includes(k) && jobLower.includes(k))
+  const jobOnly = SKILL_KEYWORDS.filter(k => !resumeLower.includes(k) && jobLower.includes(k))
+  const resumeOnly = SKILL_KEYWORDS.filter(k => resumeLower.includes(k) && !jobLower.includes(k))
+
+  const totalJobSkills = matched.length + jobOnly.length
+  const fitPct = totalJobSkills > 0 ? Math.round((matched.length / totalJobSkills) * 100) : 0
+
+  const requiredYears = parseRequiredYears(jobDescription)
+  const resumeYears = inferResumeYears(resumeText)
+  const resumeLevel = inferLevel(resumeText)
+  const jobLevel = inferLevel(jobDescription)
+
+  const lines: string[] = []
+
+  // Overall fit
+  if (totalJobSkills === 0) {
+    lines.push('No recognizable technical skills found in this posting — fit is hard to assess automatically. Review the requirements manually.')
+  } else if (fitPct >= 70) {
+    lines.push(`Strong skill match: your resume covers ${matched.length} of ${totalJobSkills} detected required skills (${fitPct}% overlap).`)
+  } else if (fitPct >= 40) {
+    lines.push(`Partial skill match: your resume covers ${matched.length} of ${totalJobSkills} detected required skills (${fitPct}% overlap). Targetable with some prep.`)
+  } else {
+    lines.push(`Low skill overlap: your resume matches ${matched.length} of ${totalJobSkills} detected required skills (${fitPct}%). This role may require significant upskilling.`)
+  }
+
+  // Matched skills
+  if (matched.length > 0) {
+    lines.push(`Skills you already have: ${matched.slice(0, 8).map(s => s.toUpperCase()).join(', ')}.`)
+  }
+
+  // Gaps
+  if (jobOnly.length > 0) {
+    lines.push(`Skills to address before applying: ${jobOnly.slice(0, 5).map(s => s.toUpperCase()).join(', ')}.`)
+  }
+
+  // Transferable extras
+  if (resumeOnly.length > 0) {
+    lines.push(`You also bring ${resumeOnly.slice(0, 4).map(s => s.toUpperCase()).join(', ')} — not required, but potentially differentiating.`)
+  }
+
+  // Experience level check
+  if (requiredYears !== null && resumeYears !== null) {
+    if (resumeYears >= requiredYears) {
+      lines.push(`Experience level looks like a match: role asks for ${requiredYears}+ years and your resume suggests ~${resumeYears} years.`)
+    } else {
+      lines.push(`Potential experience gap: role asks for ${requiredYears}+ years, your resume suggests ~${resumeYears} years. Consider highlighting impact over tenure.`)
+    }
+  } else if (resumeLevel !== jobLevel) {
+    const levelMap = { student: 'entry-level', junior: 'junior', mid: 'mid-level', senior: 'senior' }
+    lines.push(`Seniority signal: your resume reads as ${levelMap[resumeLevel]} while this role appears to target ${levelMap[jobLevel]} candidates.`)
+  }
+
+  return lines.join(' ')
+}
+
 export interface AnalysisResult {
   score: number
   ghost_risk_pct: number
