@@ -24,6 +24,11 @@ PYTHONPYCACHEPREFIX=/tmp/hiresight-pycache python3 run.py
 
 ## Environment
 
-The frontend reads Supabase and backend connection settings from `.env.local`.
+The frontend reads Supabase, backend connection, and ElevenLabs text-to-speech settings from `.env.local`.
+
+```bash
+ELEVENLABS_API_KEY=your_elevenlabs_key
+ELEVENLABS_MODEL_ID=eleven_multilingual_v2
+```
 
 The backend reads `GEMINI_API_KEY` from `backend/.env`.
