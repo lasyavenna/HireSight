@@ -3,10 +3,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 export default function Navbar() {
   const pathname = usePathname()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
@@ -24,6 +25,7 @@ export default function Navbar() {
   const tabs = [
     { label: 'Community', href: '/' },
     { label: 'Analyze a Job', href: '/ghost-detector' },
+    { label: 'Live Interview', href: '/live-interview' },
     { label: 'Ghost Exposé', href: '/ghost-expose' },
   ]
 
@@ -51,6 +53,7 @@ export default function Navbar() {
         marginRight: '32px',
         textDecoration: 'none',
         letterSpacing: '-0.5px',
+        flexShrink: 0,
       }}>
         HireSight<span style={{ color: 'var(--amber)' }}>.</span>
         <span style={{
@@ -68,7 +71,7 @@ export default function Navbar() {
       </Link>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '2px', flex: 1 }}>
+      <div style={{ display: 'flex', gap: '2px', flex: 1, overflowX: 'auto' }}>
         {tabs.map((tab) => {
           const isActive = pathname === tab.href
           return (
@@ -86,6 +89,8 @@ export default function Navbar() {
                 textDecoration: 'none',
                 transition: 'all 0.15s',
                 letterSpacing: '0.1px',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               {tab.label}
