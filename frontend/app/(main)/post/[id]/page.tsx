@@ -38,15 +38,37 @@ export default function PostDetailPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const fetchPost = useCallback(async () => {
-    const { data } = await supabase
+    let data: PostRow | null = null
+
+    const { data: full } = await supabase
       .from('posts')
       .select(`*, profiles(username, avatar_url, role), companies(name, industry), votes(vote_type)`)
       .eq('id', id)
-      .single()
+      .maybeSingle()
+
+    if (full) {
+      data = full as PostRow
+    } else {
+      const { data: noVotes } = await supabase
+        .from('posts')
+        .select(`*, profiles(username, avatar_url, role), companies(name, industry)`)
+        .eq('id', id)
+        .maybeSingle()
+
+      if (noVotes) {
+        data = noVotes as PostRow
+      } else {
+        const { data: bare } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle()
+        if (bare) data = bare as PostRow
+      }
+    }
 
     if (data) {
-      const row = data as PostRow
-      const voteCount = (row.votes || []).reduce((acc, vote) => acc + vote.vote_type, 0)
+      const voteCount = (data.votes || []).reduce((acc, vote) => acc + vote.vote_type, 0)
       setPost({ ...data, vote_count: voteCount })
       setVotes(voteCount)
     }
@@ -106,13 +128,24 @@ export default function PostDetailPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); setSubmitting(false); return }
 
-    await supabase.from('comments').insert({
+    const text = newComment.trim()
+    setNewComment('')
+
+    // Optimistically add the comment immediately
+    const optimistic: Comment = {
+      id: `optimistic-${Date.now()}`,
       post_id: id,
       user_id: user.id,
-      content: newComment.trim(),
-    })
+      content: text,
+      created_at: new Date().toISOString(),
+      profiles: { username: user.email?.split('@')[0] ?? 'you' } as Comment['profiles'],
+    }
+    setComments(prev => [...prev, optimistic])
 
-    setNewComment('')
+    await supabase.from('comments').insert({ post_id: id, user_id: user.id, content: text })
+
+    // Replace optimistic comment with real data from DB
+    fetchComments()
     setSubmitting(false)
   }
 
@@ -130,7 +163,7 @@ export default function PostDetailPage() {
     return (
       <div style={{ maxWidth: '760px', margin: '0 auto', padding: '48px 20px', textAlign: 'center' }}>
         <div style={{ color: 'var(--text2)', marginBottom: '12px' }}>Post not found</div>
-        <Link href="/" style={{ color: 'var(--amber)', fontSize: '13px' }}>← Back to feed</Link>
+        <Link href="/community" style={{ color: 'var(--amber)', fontSize: '13px' }}>← Back to community</Link>
       </div>
     )
   }
@@ -142,12 +175,12 @@ export default function PostDetailPage() {
     <div style={{ maxWidth: '760px', margin: '0 auto', padding: '24px 20px' }}>
 
       {/* Back */}
-      <Link href="/" style={{
+      <Link href="/community" style={{
         display: 'inline-flex', alignItems: 'center', gap: '6px',
         fontSize: '13px', color: 'var(--text3)', textDecoration: 'none',
         marginBottom: '16px', transition: 'color 0.12s',
       }}>
-        ← Back to feed
+        ← Back to community
       </Link>
 
       {/* Post card */}
@@ -187,7 +220,7 @@ export default function PostDetailPage() {
           }}>{post.post_type}</span>
 
           <span style={{ fontSize: '12px', color: 'var(--text3)' }}>
-            {authorLabel} · {formatDistanceToNow(new Date(post.created_at))} ago
+            {authorLabel} · {formatDistanceToNow(new Date(post.created_at.endsWith('Z') ? post.created_at : post.created_at + 'Z'))} ago
           </span>
         </div>
 
@@ -349,7 +382,7 @@ export default function PostDetailPage() {
                   {comment.profiles?.username ?? 'anonymous'}
                 </Link>
                 <span style={{ fontSize: '11px', color: 'var(--text3)' }}>
-                  {formatDistanceToNow(new Date(comment.created_at))} ago
+                  {formatDistanceToNow(new Date(comment.created_at.endsWith('Z') ? comment.created_at : comment.created_at + 'Z'))} ago
                 </span>
               </div>
               <p style={{

@@ -113,7 +113,7 @@ export default function PostCard({ post }: Props) {
           {post.role_title && <span>{post.role_title}</span>}
           <span style={{ color: 'var(--text3)' }}>
             · {post.is_anonymous ? 'anonymous' : `u/${post.profiles?.username}`}
-            · {formatDistanceToNow(new Date(post.created_at))} ago
+            · {formatDistanceToNow(new Date(post.created_at.endsWith('Z') ? post.created_at : post.created_at + 'Z'))} ago
           </span>
         </div>
       </div>
