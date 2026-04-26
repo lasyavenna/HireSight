@@ -22,9 +22,9 @@ export default function Navbar() {
   }
 
   const tabs = [
-    { label: 'Community', href: '/' },
-    { label: 'Analyze a Job', href: '/ghost-detector' },
-    { label: 'Ghost Exposé', href: '/ghost-expose' },
+    { label: 'Interview Prep', href: '/' },
+    { label: 'Resume & Jobs', href: '/resume' },
+    { label: 'Community', href: '/community' },
   ]
 
   return (
