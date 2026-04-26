@@ -85,7 +85,7 @@ export default function HomePage() {
               alignItems: 'center',
               gap: '8px',
               background: 'var(--amber)',
-              color: '#1a0e00',
+              color: '#0d1e2a',
               textDecoration: 'none',
               borderRadius: '9px',
               padding: '11px 16px',

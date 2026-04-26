@@ -15,7 +15,9 @@ def create_app():
 
     from .routes.analyze import analyze_bp
     from .routes.health import health_bp
+    from .routes.roadmap import roadmap_bp
     app.register_blueprint(analyze_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(roadmap_bp)
 
     return app

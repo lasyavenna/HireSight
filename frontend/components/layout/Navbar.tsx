@@ -27,6 +27,7 @@ export default function Navbar() {
   const tabs = [
     { label: 'Demo Path', href: '/' },
     { label: 'Job Analyzer', href: '/ghost-detector' },
+    { label: 'Career Roadmap', href: '/roadmap' },
     { label: 'Live Interview', href: '/live-interview' },
     { label: 'Community', href: '/community' },
   ]
@@ -147,7 +148,7 @@ export default function Navbar() {
               padding: '7px 16px',
               borderRadius: '8px',
               background: 'var(--amber)',
-              color: '#1a0e00',
+              color: '#0d1e2a',
               textDecoration: 'none',
             }}>
               Sign Up
