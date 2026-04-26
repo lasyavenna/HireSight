@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import {
   Target, Briefcase, Clock, Code2, Wrench, Users, Lightbulb,
   ChevronRight, CheckCircle2, Circle, Star, MessageSquare, BookOpen,
@@ -93,7 +94,25 @@ export default function RoadmapPage() {
   const [company, setCompany] = useState('')
   const [role, setRole] = useState('')
   const [resumeText, setResumeText] = useState('')
+  const [resumeLoaded, setResumeLoaded] = useState(false)
   const [showResume, setShowResume] = useState(false)
+
+  useEffect(() => {
+    async function loadSavedResume() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('resumes')
+        .select('raw_text')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (data?.raw_text) {
+        setResumeText(data.raw_text)
+        setResumeLoaded(true)
+      }
+    }
+    loadSavedResume()
+  }, [])
   const [loading, setLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState(0)
   const [data, setData] = useState<RoadmapData | null>(null)
@@ -233,7 +252,7 @@ export default function RoadmapPage() {
           style={{
             background: 'none',
             border: 'none',
-            color: 'var(--text3)',
+            color: resumeLoaded ? 'var(--green)' : 'var(--text3)',
             fontSize: '12px',
             cursor: 'pointer',
             padding: '0 0 12px',
@@ -244,7 +263,7 @@ export default function RoadmapPage() {
           }}
         >
           <ChevronRight size={14} style={{ transform: showResume ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
-          {showResume ? 'Hide' : 'Add resume context for personalized gap analysis (optional)'}
+          {showResume ? 'Hide resume' : resumeLoaded ? '✓ Resume loaded — roadmap will be personalized to your profile' : 'Add resume context for personalized gap analysis (optional)'}
         </button>
 
         {showResume && (

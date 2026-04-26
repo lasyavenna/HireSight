@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const flaskUrl = (process.env.FLASK_API_URL || 'http://127.0.0.1:5000')
-    .replace('http://localhost:5000', 'http://127.0.0.1:5000')
-    .replace('http://localhost:5001', 'http://127.0.0.1:5000')
-    .replace('http://127.0.0.1:5001', 'http://127.0.0.1:5000')
+  const flaskUrl = (process.env.FLASK_API_URL || 'http://127.0.0.1:5001')
+    .replace('http://localhost:', 'http://127.0.0.1:')
 
   try {
     const response = await fetch(`${flaskUrl}/api/interview-analyze`, {

@@ -120,13 +120,13 @@ Return ONLY raw JSON (no markdown, no backticks):
     {{
       "phase": "Phase name",
       "weeks": "Weeks 1–3",
-      "goal": "Goal tied specifically to what {company} tests for based on search results",
+      "goal": "One sentence describing the focus of this phase. Do NOT include the milestone here.",
       "tasks": [
         "Specific task referencing {company}'s actual stack or interview format from results",
         "Second specific task",
         "Third specific task"
       ],
-      "milestone": "Concrete, measurable deliverable"
+      "milestone": "A single concrete, measurable deliverable that proves this phase is complete. Must be different from the goal sentence and must not appear in the goal field."
     }}
   ],
   "projects_to_build": [
@@ -165,10 +165,36 @@ Timeline: exactly 4 phases, weeks 1–12, exactly 3 tasks each."""
             return _fallback_roadmap(company, role)
 
 
+def _clean_timeline(timeline: list) -> list:
+    import re
+    cleaned = []
+    for phase in timeline:
+        goal = phase.get('goal', '')
+        milestone = phase.get('milestone', '')
+        # If milestone is missing or identical to goal, try to split it out
+        if not milestone or milestone == goal:
+            # Look for "Milestone: ..." pattern embedded in goal
+            m = re.search(r'[Mm]ilestone[:\-–]\s*(.+)', goal)
+            if m:
+                milestone = m.group(1).strip().rstrip('.')
+                goal = goal[:m.start()].strip().rstrip('.')
+            else:
+                # Use last sentence of goal as milestone if goal is multi-sentence
+                sentences = re.split(r'(?<=[.!?])\s+', goal.strip())
+                if len(sentences) > 1:
+                    milestone = sentences[-1].rstrip('.')
+                    goal = ' '.join(sentences[:-1])
+        phase['goal'] = goal
+        phase['milestone'] = milestone
+        cleaned.append(phase)
+    return cleaned
+
+
 def _validate(data: dict):
     for key in ['overview', 'hiring_process', 'required_skills', 'timeline', 'projects_to_build']:
         if key not in data:
             raise ValueError(f'Missing key: {key}')
+    data['timeline'] = _clean_timeline(data.get('timeline', []))
 
 
 def _fallback_roadmap(company: str, role: str) -> dict:
