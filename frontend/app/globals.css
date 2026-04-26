@@ -8,12 +8,12 @@
 
 :root {
   /* Oxford blue dark palette + ice-blue accents */
-  --bg: #0d1c32;
-  --bg2: #122038;
-  --bg3: #1a2a46;
-  --bg4: #22334e;
-  --border: rgba(80, 145, 210, 0.09);
-  --border2: rgba(80, 145, 210, 0.18);
+  --bg: #050d20;
+  --bg2: #09132c;
+  --bg3: #0f1b36;
+  --bg4: #172342;
+  --border: rgba(255, 255, 255, 0.22);
+  --border2: rgba(255, 255, 255, 0.38);
   --text: #cce0f4;
   --text2: #6898b8;
   --text3: #3a5872;
@@ -38,14 +38,14 @@
 body {
   background-color: var(--bg);
   /*
-    Layer 1 & 2: hairline grid (24 px squares, ~4 % blue opacity — barely visible)
+    Layer 1 & 2: hairline grid (40 px squares, ~8 % blue opacity)
     Layer 3: sandy fractal noise tinted cool-blue, baked into bg
   */
   background-image:
-    linear-gradient(rgba(80, 145, 210, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(80, 145, 210, 0.04) 1px, transparent 1px),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='0.18' intercept='0.28'/%3E%3CfeFuncG type='linear' slope='0.20' intercept='0.36'/%3E%3CfeFuncB type='linear' slope='0.26' intercept='0.52'/%3E%3CfeFuncA type='linear' slope='0.13' intercept='0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23s)'/%3E%3C/svg%3E");
-  background-size: 24px 24px, 24px 24px, 256px 256px;
+    linear-gradient(rgba(80, 145, 210, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 145, 210, 0.08) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='0.18' intercept='0.28'/%3E%3CfeFuncG type='linear' slope='0.16' intercept='0.26'/%3E%3CfeFuncB type='linear' slope='0.30' intercept='0.58'/%3E%3CfeFuncA type='linear' slope='0.13' intercept='0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23s)'/%3E%3C/svg%3E");
+  background-size: 40px 40px, 40px 40px, 256px 256px;
   background-repeat: repeat, repeat, repeat;
   color: var(--text);
   font-family: var(--font);
