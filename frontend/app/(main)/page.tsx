@@ -40,13 +40,6 @@ export default function HomePage() {
     },
   ]
 
-  const proofPoints = [
-    { label: 'Ghost-job risk', value: '0-100', color: 'var(--amber)' },
-    { label: 'Resume parsing', value: 'PDF', color: 'var(--green)' },
-    { label: 'AI coaching', value: 'Gemini', color: 'var(--teal)' },
-    { label: 'Career roadmap', value: '12 wk', color: 'var(--purple)' },
-  ]
-
   return (
     <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '32px 20px 56px' }}>
       <section className="demo-hero">
@@ -120,30 +113,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div style={{
-          border: '1px solid var(--border)',
-          background: 'var(--bg2)',
-          borderRadius: '14px',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-        }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>
-              What judges should see
-            </div>
-            {proofPoints.map(point => (
-              <div key={point.label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '12px 0' }}>
-                <span style={{ color: 'var(--text2)', fontSize: '13px' }}>{point.label}</span>
-                <span style={{ color: point.color, fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600 }}>{point.value}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: '22px', color: 'var(--text3)', fontSize: '12px', lineHeight: 1.7 }}>
-            Recommended talk track: We help applicants decide where to spend their time, then improve their odds once they choose to apply.
-          </div>
-        </div>
       </section>
 
       <section className="demo-steps">
