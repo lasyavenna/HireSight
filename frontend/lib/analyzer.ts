@@ -9,6 +9,7 @@ export interface AnalysisResult {
   positive_signals: SignalResult[]
   negative_signals: SignalResult[]
   ai_summary?: string
+  candidate_fit?: string
 }
 
 export interface SignalResult {
@@ -18,7 +19,6 @@ export interface SignalResult {
 }
 
 export function analyzeJobPosting(description: string): AnalysisResult {
-  const text = description.toLowerCase()
   let score = 50 // baseline
   const positiveSignals: SignalResult[] = []
   const negativeSignals: SignalResult[] = []

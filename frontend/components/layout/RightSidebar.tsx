@@ -30,7 +30,7 @@ export default function RightSidebar() {
           AI Digest — Google
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.6, fontStyle: 'italic' }}>
-          "Applicants report medium-hard OAs with heavy LC-style problems. Response times average 3–4 weeks. Recruiter communication is inconsistent but roles appear active. SWE-L4 highly competitive."
+          Applicants report medium-hard OAs with heavy LC-style problems. Response times average 3-4 weeks. Recruiter communication is inconsistent but roles appear active. SWE-L4 highly competitive.
         </p>
       </div>
 

@@ -1,10 +1,14 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Post, Comment } from '@/lib/types'
 import { formatDistanceToNow } from 'date-fns'
+
+type PostRow = Post & {
+  votes?: { vote_type: number }[]
+}
 
 const catBadgeStyle: Record<string, { background: string; color: string }> = {
   OA:        { background: 'var(--purple-dim)', color: 'var(--purple)' },
@@ -33,27 +37,7 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    fetchPost()
-    fetchComments()
-
-    // Realtime subscription for new comments
-    const channel = supabase
-      .channel(`post-${id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'comments',
-        filter: `post_id=eq.${id}`,
-      }, (payload) => {
-        fetchComments()
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [id])
-
-  async function fetchPost() {
+  const fetchPost = useCallback(async () => {
     const { data } = await supabase
       .from('posts')
       .select(`*, profiles(username, avatar_url, role), companies(name, industry), votes(vote_type)`)
@@ -61,14 +45,15 @@ export default function PostDetailPage() {
       .single()
 
     if (data) {
-      const voteCount = (data.votes || []).reduce((acc: number, v: any) => acc + v.vote_type, 0)
+      const row = data as PostRow
+      const voteCount = (row.votes || []).reduce((acc, vote) => acc + vote.vote_type, 0)
       setPost({ ...data, vote_count: voteCount })
       setVotes(voteCount)
     }
     setLoading(false)
-  }
+  }, [id])
 
-  async function fetchComments() {
+  const fetchComments = useCallback(async () => {
     const { data } = await supabase
       .from('comments')
       .select(`*, profiles(username, avatar_url, role)`)
@@ -76,7 +61,28 @@ export default function PostDetailPage() {
       .order('created_at', { ascending: true })
 
     setComments(data || [])
-  }
+  }, [id])
+
+  useEffect(() => {
+    // Supabase fetches hydrate this detail route after the dynamic id is available.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPost()
+    fetchComments()
+
+    const channel = supabase
+      .channel(`post-${id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${id}`,
+      }, () => {
+        fetchComments()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [id, fetchPost, fetchComments])
 
   async function handleVote() {
     const { data: { user } } = await supabase.auth.getUser()

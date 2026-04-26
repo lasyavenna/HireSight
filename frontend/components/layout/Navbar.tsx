@@ -1,12 +1,13 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
 export default function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
@@ -20,13 +21,14 @@ export default function Navbar() {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setUser(null)
+    router.push('/login')
   }
 
   const tabs = [
-    { label: 'Community', href: '/' },
-    { label: 'Analyze a Job', href: '/ghost-detector' },
+    { label: 'Demo Path', href: '/' },
+    { label: 'Job Analyzer', href: '/ghost-detector' },
     { label: 'Live Interview', href: '/live-interview' },
-    { label: 'Ghost Exposé', href: '/ghost-expose' },
+    { label: 'Community', href: '/community' },
   ]
 
   return (
@@ -148,7 +150,7 @@ export default function Navbar() {
               color: '#1a0e00',
               textDecoration: 'none',
             }}>
-              Post Experience
+              Sign Up
             </Link>
           </>
         )}

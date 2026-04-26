@@ -3,6 +3,11 @@ import { notFound } from 'next/navigation'
 import PostCard from '@/components/feed/PostCard'
 import { Post, Profile } from '@/lib/types'
 
+type PostRow = Post & {
+  votes?: { vote_type: number }[]
+  comment_count?: number
+}
+
 async function getProfile(id: string): Promise<Profile | null> {
   const { data } = await supabase
     .from('profiles')
@@ -21,9 +26,9 @@ async function getUserPosts(id: string): Promise<Post[]> {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  return (data || []).map((post: any) => ({
+  return ((data || []) as PostRow[]).map((post) => ({
     ...post,
-    vote_count: (post.votes || []).reduce((acc: number, v: any) => acc + v.vote_type, 0),
+    vote_count: (post.votes || []).reduce((acc, vote) => acc + vote.vote_type, 0),
     comment_count: post.comment_count ?? 0,
   }))
 }
@@ -158,7 +163,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             color: 'var(--text3)',
           }}>
             <div style={{ fontSize: '15px', marginBottom: '6px' }}>No public posts yet</div>
-            <div style={{ fontSize: '12px' }}>Posts made anonymously won't appear here</div>
+            <div style={{ fontSize: '12px' }}>Anonymous posts do not appear here</div>
           </div>
         ) : (
           posts.map(post => <PostCard key={post.id} post={post} />)
