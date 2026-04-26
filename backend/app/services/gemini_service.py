@@ -40,24 +40,29 @@ def _parse_json_response(text: str) -> dict:
         text = text.split('\n', 1)[1].rsplit('```', 1)[0].strip()
     return json.loads(text)
 
-def analyze_job_with_ai(job_description: str, rule_score: int) -> dict:
+def analyze_job_with_ai(job_description: str, rule_score: int, resume_text: str = "") -> dict:
     prompt = f"""You are an expert at detecting ghost jobs — roles companies post with no real intent to hire.
 
 Analyze this job posting and provide:
 1. A 2-3 sentence plain-English summary of whether this looks like a real job
 2. The top 2 specific red flags (or green flags if it looks real)
 3. One concrete action the applicant should take
+4. If resume context is provided, a 1-2 sentence candidate-fit note that references specific overlap or gaps
 
 Rule-based score: {rule_score}/100 (higher = more legitimate)
 
 Job Posting:
 {job_description[:3000]}
 
+Resume Context:
+{resume_text[:2200] if resume_text else "No resume provided."}
+
 Respond in this exact JSON format:
 {{
   "summary": "...",
   "top_signals": ["...", "..."],
-  "action": "..."
+  "action": "...",
+  "candidate_fit": "..."
 }}"""
 
     try:
@@ -66,10 +71,14 @@ Respond in this exact JSON format:
         response = model.generate_content(prompt)
         return _parse_json_response(response.text)
     except Exception as e:
+        candidate_fit = ""
+        if resume_text:
+            candidate_fit = "Resume context was received, but AI fit analysis is unavailable right now. Compare the resume keywords against the role requirements before applying."
         return {
             "summary": "AI analysis unavailable at this time.",
             "top_signals": [],
-            "action": "Review the rule-based signals above."
+            "action": "Review the rule-based signals above.",
+            "candidate_fit": candidate_fit,
         }
 
 def analyze_interview_answer_with_ai(

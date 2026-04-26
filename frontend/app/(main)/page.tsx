@@ -1,104 +1,189 @@
-'use client'
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import PostCard from '@/components/feed/PostCard'
-import PostComposer from '@/components/feed/PostComposer'
-import LeftSidebar from '@/components/layout/LeftSidebar'
-import RightSidebar from '@/components/layout/RightSidebar'
-import { Post } from '@/lib/types'
+import Link from 'next/link'
+import { ArrowRight, FileText, LogIn, Mic2, SearchCheck, ShieldCheck, Users } from 'lucide-react'
 
-const sortOptions = ['Hot', 'New', 'Top']
+export default function HomePage() {
+  const demoSteps = [
+    {
+      icon: LogIn,
+      title: '1. Create an applicant account',
+      body: 'Sign up once so the resume and interview context can follow the candidate across the demo.',
+      href: '/signup',
+      cta: 'Start with sign up',
+    },
+    {
+      icon: FileText,
+      title: '2. Upload a PDF resume',
+      body: 'HireSight extracts readable resume text, saves it for the user, and uses it in job and interview analysis.',
+      href: '/ghost-detector',
+      cta: 'Upload and analyze',
+    },
+    {
+      icon: SearchCheck,
+      title: '3. Score a job posting',
+      body: 'Paste a posting to show the rule engine, Gemini summary, ghost-job risk, and personalized candidate fit.',
+      href: '/ghost-detector',
+      cta: 'Analyze a job',
+    },
+    {
+      icon: Mic2,
+      title: '4. Practice the interview',
+      body: 'Run the live coach to demonstrate resume-aware questions, speech notes, and AI feedback.',
+      href: '/live-interview',
+      cta: 'Open coach',
+    },
+  ]
 
-export default function FeedPage() {
-  const [posts, setPosts] = useState<Post[]>([])
-  const [filter, setFilter] = useState('all')
-  const [sort, setSort] = useState('Hot')
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchPosts()
-  }, [])
-
-  async function fetchPosts() {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('posts')
-      .select(`*, profiles(username, avatar_url, role), companies(name, industry), votes(vote_type)`)
-      .order('created_at', { ascending: false })
-      .limit(50)
-
-    if (!error && data) {
-      const mapped = data.map((post: any) => ({
-        ...post,
-        vote_count: (post.votes || []).reduce((acc: number, v: any) => acc + v.vote_type, 0),
-        comment_count: post.comment_count ?? 0,
-      }))
-      setPosts(mapped)
-    }
-    setLoading(false)
-  }
-
-  const filteredPosts = filter === 'all'
-    ? posts
-    : posts.filter(p => p.post_type === filter)
+  const proofPoints = [
+    { label: 'Ghost-job risk', value: '0-100', color: 'var(--amber)' },
+    { label: 'Resume parsing', value: 'PDF', color: 'var(--green)' },
+    { label: 'AI coaching', value: 'Gemini', color: 'var(--teal)' },
+  ]
 
   return (
-    <div style={{
-      maxWidth: '1200px',
-      margin: '0 auto',
-      display: 'grid',
-      gridTemplateColumns: '220px 1fr 280px',
-      gap: '20px',
-      padding: '24px 20px',
-    }}>
-      {/* Left Sidebar */}
-      <LeftSidebar activeFilter={filter} onFilter={setFilter} />
-
-      {/* Main Feed */}
-      <main>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text)' }}>
-            Applicant Intelligence Feed
+    <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '32px 20px 56px' }}>
+      <section className="demo-hero">
+        <div style={{
+          border: '1px solid var(--border)',
+          background: 'var(--bg2)',
+          borderRadius: '14px',
+          padding: '32px',
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: 'var(--amber)',
+            background: 'var(--amber-dim)',
+            border: '1px solid rgba(245,158,11,0.25)',
+            borderRadius: '8px',
+            padding: '5px 10px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.8px',
+            textTransform: 'uppercase',
+            marginBottom: '18px',
+          }}>
+            <ShieldCheck size={14} />
+            Judge demo path
           </div>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {sortOptions.map(s => (
-              <button
-                key={s}
-                onClick={() => setSort(s)}
-                style={{
-                  fontSize: '12px', fontWeight: 500,
-                  padding: '5px 12px', borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  background: sort === s ? 'var(--bg3)' : 'none',
-                  color: sort === s ? 'var(--text)' : 'var(--text2)',
-                  cursor: 'pointer', transition: 'all 0.12s',
-                  fontFamily: 'var(--font)',
-                }}
-              >
-                {s}
-              </button>
-            ))}
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(34px, 5vw, 58px)',
+            lineHeight: 1,
+            fontWeight: 900,
+            marginBottom: '16px',
+            color: 'var(--text)',
+          }}>
+            HireSight turns job chaos into applicant intelligence.
+          </h1>
+          <p style={{ color: 'var(--text2)', fontSize: '15px', lineHeight: 1.8, maxWidth: '720px', marginBottom: '24px' }}>
+            Present the product as one candidate journey: create an account, upload a resume PDF, evaluate whether a job is worth applying to, then practice an interview with that resume context.
+          </p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <Link href="/signup" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'var(--amber)',
+              color: '#1a0e00',
+              textDecoration: 'none',
+              borderRadius: '9px',
+              padding: '11px 16px',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '14px',
+            }}>
+              Run the demo <ArrowRight size={16} />
+            </Link>
+            <Link href="/ghost-detector" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              border: '1px solid var(--border2)',
+              color: 'var(--text2)',
+              textDecoration: 'none',
+              borderRadius: '9px',
+              padding: '11px 16px',
+              fontWeight: 700,
+              fontSize: '14px',
+            }}>
+              Skip to analyzer
+            </Link>
           </div>
         </div>
 
-        <PostComposer onPost={fetchPosts} />
-
-        {loading ? (
-          <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '48px 0', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
-            Loading feed…
+        <div style={{
+          border: '1px solid var(--border)',
+          background: 'var(--bg2)',
+          borderRadius: '14px',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>
+              What judges should see
+            </div>
+            {proofPoints.map(point => (
+              <div key={point.label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '12px 0' }}>
+                <span style={{ color: 'var(--text2)', fontSize: '13px' }}>{point.label}</span>
+                <span style={{ color: point.color, fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600 }}>{point.value}</span>
+              </div>
+            ))}
           </div>
-        ) : filteredPosts.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '48px 0' }}>
-            <div style={{ fontSize: '16px', marginBottom: '6px' }}>No posts yet</div>
-            <div style={{ fontSize: '13px' }}>Be the first to share your experience</div>
+          <div style={{ marginTop: '22px', color: 'var(--text3)', fontSize: '12px', lineHeight: 1.7 }}>
+            Recommended talk track: We help applicants decide where to spend their time, then improve their odds once they choose to apply.
           </div>
-        ) : (
-          filteredPosts.map(post => <PostCard key={post.id} post={post} />)
-        )}
-      </main>
+        </div>
+      </section>
 
-      {/* Right Sidebar */}
-      <RightSidebar />
+      <section className="demo-steps">
+        {demoSteps.map(step => {
+          const Icon = step.icon
+          return (
+            <Link key={step.title} href={step.href} style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              minHeight: '230px',
+              border: '1px solid var(--border)',
+              background: 'var(--bg2)',
+              borderRadius: '12px',
+              padding: '18px',
+              color: 'inherit',
+              textDecoration: 'none',
+            }}>
+              <Icon size={22} color="var(--amber)" />
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
+                {step.title}
+              </div>
+              <p style={{ color: 'var(--text2)', fontSize: '12px', lineHeight: 1.7, flex: 1 }}>{step.body}</p>
+              <span style={{ color: 'var(--amber)', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                {step.cta} <ArrowRight size={14} />
+              </span>
+            </Link>
+          )
+        })}
+      </section>
+
+      <section className="demo-support">
+        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', borderRadius: '12px', padding: '20px' }}>
+          <Users size={20} color="var(--teal)" />
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', margin: '12px 0 8px' }}>Community proof is secondary</h2>
+          <p style={{ color: 'var(--text2)', fontSize: '13px', lineHeight: 1.7, marginBottom: '14px' }}>
+            Use the community feed after the core demo as evidence that applicants can share company-specific signal over time.
+          </p>
+          <Link href="/community" style={{ color: 'var(--teal)', fontSize: '13px', fontWeight: 800, textDecoration: 'none' }}>Open community feed</Link>
+        </div>
+        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', borderRadius: '12px', padding: '20px' }}>
+          <SearchCheck size={20} color="var(--green)" />
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', margin: '12px 0 8px' }}>Best presentation order</h2>
+          <p style={{ color: 'var(--text2)', fontSize: '13px', lineHeight: 1.7 }}>
+            Lead with the pain, run the four-step candidate flow live, close with the tech stack and why resume context makes the AI more useful than a generic chatbot.
+          </p>
+        </div>
+      </section>
     </div>
   )
 }

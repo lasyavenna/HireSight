@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -20,7 +21,7 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  const inputStyle = {
+  const inputStyle: CSSProperties = {
     width: '100%', display: 'block',
     background: 'var(--bg3)',
     border: '1px solid var(--border)',
@@ -59,7 +60,7 @@ export default function LoginPage() {
         <input
           type="email" placeholder="Email" value={email}
           onChange={e => setEmail(e.target.value)}
-          style={inputStyle as any}
+          style={inputStyle}
           onFocus={e => (e.target.style.borderColor = 'var(--amber)')}
           onBlur={e => (e.target.style.borderColor = 'var(--border)')}
         />
@@ -67,7 +68,7 @@ export default function LoginPage() {
           type="password" placeholder="Password" value={password}
           onChange={e => setPassword(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleLogin()}
-          style={{ ...inputStyle as any, marginBottom: '16px' }}
+          style={{ ...inputStyle, marginBottom: '16px' }}
           onFocus={e => (e.target.style.borderColor = 'var(--amber)')}
           onBlur={e => (e.target.style.borderColor = 'var(--border)')}
         />

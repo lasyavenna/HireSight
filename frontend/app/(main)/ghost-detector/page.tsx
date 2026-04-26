@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { analyzeJobPosting, AnalysisResult } from '@/lib/analyzer'
+import ResumePdfUploader from '@/components/resume/ResumePdfUploader'
 
 const recStyle: Record<string, { color: string; bg: string; border: string; icon: string }> = {
   'Apply':         { color: 'var(--green)',  bg: 'var(--green-dim)',  border: 'rgba(34,197,94,0.3)',  icon: '↑' },
@@ -33,7 +34,6 @@ export default function GhostDetectorPage() {
   const [input, setInput] = useState('')
   const [company, setCompany] = useState('')
   const [resume, setResume] = useState('')
-  const [showResumeInput, setShowResumeInput] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [analyzed, setAnalyzed] = useState(false)
@@ -50,10 +50,16 @@ export default function GhostDetectorPage() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job_description: input, rule_score: r.score }),
+        body: JSON.stringify({
+          job_description: input,
+          rule_score: r.score,
+          resume_text: resume,
+          company_name: company,
+          job_url: jobUrl,
+        }),
       })
       const data = await res.json()
-      setResult(prev => prev ? { ...prev, ai_summary: data.summary } : prev)
+      setResult(prev => prev ? { ...prev, ai_summary: data.summary, candidate_fit: data.candidate_fit } : prev)
     } catch (e) {
       console.error(e)
     }
@@ -182,56 +188,18 @@ export default function GhostDetectorPage() {
         <div style={{ marginBottom: '26px' }}>
           <div style={labelStyle}>
             <span>
-              Your Resume{' '}
+              Resume PDF{' '}
               <span style={{ color: 'var(--text3)', fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>
-                — optional · unlocks "Is this role right for you?" analysis
+                — optional · unlocks candidate fit and interview personalization
               </span>
             </span>
           </div>
 
-          {showResumeInput ? (
-            <div style={{ position: 'relative' }}>
-              <textarea
-                value={resume}
-                onChange={e => setResume(e.target.value)}
-                placeholder="Paste your resume text here..."
-                rows={5}
-                style={{ ...fieldStyle, resize: 'none', lineHeight: 1.65 }}
-                onFocus={e => (e.target.style.borderColor = 'var(--amber)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-              />
-              <button
-                onClick={() => { setResume(''); setShowResumeInput(false) }}
-                style={{
-                  position: 'absolute', top: '10px', right: '12px',
-                  background: 'none', border: 'none',
-                  color: 'var(--text3)', cursor: 'pointer', fontSize: '11px',
-                  fontFamily: 'var(--font)',
-                }}
-              >✕ Clear</button>
-            </div>
-          ) : (
-            <div
-              onClick={() => setShowResumeInput(true)}
-              style={{
-                border: '1px dashed var(--border2)',
-                borderRadius: '10px', padding: '24px',
-                textAlign: 'center', cursor: 'pointer',
-                transition: 'border-color 0.15s',
-                background: 'rgba(255,255,255,0.02)',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--amber)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border2)')}
-            >
-              <div style={{ fontSize: '18px', marginBottom: '6px', color: 'var(--text3)' }}>↑</div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text2)', marginBottom: '3px' }}>
-                Paste resume text
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
-                Click to add for personalized match scoring
-              </div>
-            </div>
-          )}
+          <ResumePdfUploader
+            resumeText={resume}
+            onResumeParsed={parsed => setResume(parsed.text)}
+            onClear={() => setResume('')}
+          />
         </div>
 
         {/* Analyze button */}
@@ -378,6 +346,22 @@ export default function GhostDetectorPage() {
                 AI Analysis
               </div>
               <p style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.7 }}>{result.ai_summary}</p>
+            </div>
+          )}
+
+          {result.candidate_fit && (
+            <div style={{
+              background: 'rgba(34,197,94,0.07)',
+              border: '1px solid rgba(34,197,94,0.22)',
+              borderRadius: '12px', padding: '20px',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--green)',
+                textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px',
+              }}>
+                Resume Match
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.7 }}>{result.candidate_fit}</p>
             </div>
           )}
 

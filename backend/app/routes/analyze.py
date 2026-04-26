@@ -12,16 +12,18 @@ def analyze():
     data = request.get_json()
     job_description = data.get('job_description', '')
     rule_score = data.get('rule_score', 50)
+    resume_text = data.get('resume_text', '')
 
     if not job_description or len(job_description) < 50:
         return jsonify({'error': 'Job description too short'}), 400
 
-    ai_result = analyze_job_with_ai(job_description, rule_score)
+    ai_result = analyze_job_with_ai(job_description, rule_score, resume_text)
 
     return jsonify({
         'summary': ai_result.get('summary'),
         'top_signals': ai_result.get('top_signals', []),
         'action': ai_result.get('action'),
+        'candidate_fit': ai_result.get('candidate_fit'),
     })
 
 @analyze_bp.route('/interview-analyze', methods=['POST'])
