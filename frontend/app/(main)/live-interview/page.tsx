@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 
 type InterviewMode = 'behavioral' | 'technical' | 'mixed'
 type SessionState = 'idle' | 'live' | 'complete'
-type InterviewVoiceId = 'rachel' | 'antoni' | 'domi' | 'elli' | 'arnold'
+type InterviewVoiceId = 'antoni' | 'arnold' | 'bella' | 'adam'
 type ResumeRow = {
   raw_text: string | null
   skills: string[] | null
@@ -100,11 +100,10 @@ const questionBank: Record<InterviewMode, string[]> = {
 const resumeFallback = 'No saved resume found yet. Paste or save a resume in your profile later for stronger personalization.'
 
 const interviewVoices: InterviewVoice[] = [
-  { id: 'rachel', name: 'Rachel', personality: 'calm recruiter', elevenLabsVoiceId: '21m00Tcm4TlvDq8ikWAM' },
   { id: 'antoni', name: 'Antoni', personality: 'warm mentor', elevenLabsVoiceId: 'ErXwobaYiN019PkySvjV' },
-  { id: 'domi', name: 'Domi', personality: 'energetic coach', elevenLabsVoiceId: 'AZnzlk1XvdvUeBnXmlld' },
-  { id: 'elli', name: 'Elli', personality: 'friendly peer interviewer', elevenLabsVoiceId: 'MF3mGyEYCl7XYWbV9V6O' },
   { id: 'arnold', name: 'Arnold', personality: 'direct technical interviewer', elevenLabsVoiceId: 'VR6AewLTigWG4xSOukaG' },
+  { id: 'bella', name: 'Bella', personality: 'polished recruiter', elevenLabsVoiceId: 'EXAVITQu4vr4xnSDxMaL' },
+  { id: 'adam', name: 'Adam', personality: 'steady senior interviewer', elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB' },
 ]
 
 function isInterviewVoiceId(value: string | null): value is InterviewVoiceId {
@@ -293,9 +292,9 @@ export default function LiveInterviewPage() {
   const [micStatus, setMicStatus] = useState('Mic is off')
   const [voiceStatus, setVoiceStatus] = useState(`${interviewVoices[0].name} voice ready`)
   const [selectedVoiceId, setSelectedVoiceId] = useState<InterviewVoiceId>(() => {
-    if (typeof window === 'undefined') return 'rachel'
+    if (typeof window === 'undefined') return 'antoni'
     const savedVoiceId = window.localStorage.getItem('hiresight-interview-voice')
-    return isInterviewVoiceId(savedVoiceId) ? savedVoiceId : 'rachel'
+    return isInterviewVoiceId(savedVoiceId) ? savedVoiceId : 'antoni'
   })
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
