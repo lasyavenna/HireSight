@@ -170,18 +170,11 @@ export default function HomePage() {
       <section className="demo-support">
         <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', borderRadius: '12px', padding: '20px' }}>
           <Users size={20} color="var(--teal)" />
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', margin: '12px 0 8px' }}>Community proof is secondary</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', margin: '12px 0 8px' }}>Community feed</h2>
           <p style={{ color: 'var(--text2)', fontSize: '13px', lineHeight: 1.7, marginBottom: '14px' }}>
-            Use the community feed after the core demo as evidence that applicants can share company-specific signal over time.
+            Applicants share company-specific signal — interview experiences, offer timelines, red flags — so future candidates know what they're actually walking into.
           </p>
           <Link href="/community" style={{ color: 'var(--teal)', fontSize: '13px', fontWeight: 800, textDecoration: 'none' }}>Open community feed</Link>
-        </div>
-        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', borderRadius: '12px', padding: '20px' }}>
-          <SearchCheck size={20} color="var(--green)" />
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', margin: '12px 0 8px' }}>Best presentation order</h2>
-          <p style={{ color: 'var(--text2)', fontSize: '13px', lineHeight: 1.7 }}>
-            Lead with the pain, run the four-step candidate flow live, close with the tech stack and why resume context makes the AI more useful than a generic chatbot.
-          </p>
         </div>
       </section>
     </div>
