@@ -1,5 +1,6 @@
 import os
 import json
+import time
 
 try:
     import google.generativeai as genai
@@ -40,6 +41,21 @@ def _parse_json_response(text: str) -> dict:
         text = text.split('\n', 1)[1].rsplit('```', 1)[0].strip()
     return json.loads(text)
 
+def _generate_json(prompt: str) -> dict:
+    last_error = None
+    for attempt in range(3):
+        try:
+            response = model.generate_content(
+                prompt,
+                generation_config={"response_mime_type": "application/json"},
+            )
+            return _parse_json_response(response.text)
+        except Exception as exc:
+            last_error = exc
+            if attempt < 2:
+                time.sleep(0.8 * (attempt + 1))
+    raise RuntimeError(f"Gemini request failed: {last_error}")
+
 def analyze_job_with_ai(job_description: str, rule_score: int, resume_text: str = "") -> dict:
     prompt = f"""You are an expert at detecting ghost jobs — roles companies post with no real intent to hire.
 
@@ -68,8 +84,7 @@ Respond in this exact JSON format:
     try:
         if not model:
             raise RuntimeError("Gemini is not configured")
-        response = model.generate_content(prompt)
-        return _parse_json_response(response.text)
+        return _generate_json(prompt)
     except Exception as e:
         candidate_fit = ""
         if resume_text:
@@ -126,8 +141,7 @@ Return ONLY valid JSON in this exact shape:
     try:
         if not model:
             raise RuntimeError("Gemini is not configured")
-        response = model.generate_content(prompt)
-        result = _parse_json_response(response.text)
+        result = _generate_json(prompt)
         return {
             "clarity": int(result.get("clarity", local_score.get("clarity", 50))),
             "depth": int(result.get("depth", local_score.get("depth", 50))),
@@ -142,15 +156,16 @@ Return ONLY valid JSON in this exact shape:
         }
     except Exception as e:
         status = gemini_status()
+        reason = status["reason"] or str(e)
         return {
             "clarity": local_score.get("clarity", 50),
             "depth": local_score.get("depth", 50),
             "impact": local_score.get("impact", 50),
-            "feedback": f"Gemini analysis is unavailable right now ({status['reason'] or 'request failed'}), so HireSight used the local scoring rubric instead.",
+            "feedback": "The AI coach had a temporary issue analyzing that answer, so HireSight used the local scoring rubric for this turn. Try submitting once more for Gemini feedback.",
             "strengths": local_score.get("strengths", []),
             "improvements": local_score.get("improvements", []),
             "better_answer": "",
             "follow_up_question": "",
             "source": "local",
-            "status_reason": status["reason"] or "Gemini request failed.",
+            "status_reason": reason,
         }
