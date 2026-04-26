@@ -22,10 +22,7 @@ export default function SignupPage() {
       email: email.trim(),
       password,
       options: {
-        data: {
-          username: username.trim(),
-          role,
-        }
+        data: { username: username.trim(), role },
       }
     })
 
@@ -35,7 +32,18 @@ export default function SignupPage() {
       return
     }
 
-    // Trigger handles profile creation automatically
+    // Manually upsert profile so we don't depend solely on the DB trigger
+    const userId = data.user?.id
+    if (userId) {
+      await supabase.from('profiles').upsert({
+        id: userId,
+        username: username.trim(),
+        display_name: username.trim(),
+        role,
+        karma: 0,
+      }, { onConflict: 'id' })
+    }
+
     if (data.session) {
       router.push('/')
     } else {
