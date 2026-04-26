@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, FileText, LogIn, Mic2, SearchCheck, ShieldCheck, Users } from 'lucide-react'
+import { ArrowRight, FileText, LogIn, Mic2, SearchCheck, ShieldCheck, Users, MapPin } from 'lucide-react'
 
 export default function HomePage() {
   const demoSteps = [
@@ -31,12 +31,20 @@ export default function HomePage() {
       href: '/live-interview',
       cta: 'Open coach',
     },
+    {
+      icon: MapPin,
+      title: '5. Build a career roadmap',
+      body: 'Enter a target company and role. HireSight searches Reddit, LinkedIn, and Glassdoor to generate a personalized 12-week plan.',
+      href: '/roadmap',
+      cta: 'Get my roadmap',
+    },
   ]
 
   const proofPoints = [
     { label: 'Ghost-job risk', value: '0-100', color: 'var(--amber)' },
     { label: 'Resume parsing', value: 'PDF', color: 'var(--green)' },
     { label: 'AI coaching', value: 'Gemini', color: 'var(--teal)' },
+    { label: 'Career roadmap', value: '12 wk', color: 'var(--purple)' },
   ]
 
   return (
